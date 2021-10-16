@@ -1,4 +1,4 @@
-Demo project
+Home Automation project
 ============
 
 Behold My Awesome Project!
