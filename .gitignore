@@ -283,3 +283,5 @@ home_automation/media/
 .idea/
 output/
 
+
+home_assistant/data
