@@ -1,8 +1,8 @@
 version: '3'
 
 volumes:
-  local_postgres_data: {}
-  local_postgres_data_backups: {}
+  local_postgres_data: { }
+  local_postgres_data_backups: { }
 
 services:
   django: &django
@@ -13,7 +13,7 @@ services:
     container_name: django
     depends_on:
       - postgres
-      - mailhog
+      - redis
     volumes:
       - .:/app:z
     env_file:
@@ -35,30 +35,9 @@ services:
     env_file:
       - ./.envs/.local/.postgres
 
-  docs:
-    image: home_automation_local_docs
-    container_name: docs
-    build:
-      context: .
-      dockerfile: ./compose/local/docs/Dockerfile
-    env_file:
-      - ./.envs/.local/.django
-    volumes:
-      - ./docs:/docs:z
-      - ./config:/app/config:z
-      - ./home_automation:/app/home_automation:z
-    ports:
-      - "7000:7000"
-    command: /start-docs
-
-  mailhog:
-    image: mailhog/mailhog:v1.0.0
-    container_name: mailhog
-    ports:
-      - "8025:8025"
 
   redis:
-    image: redis:6
+    image: redis:7
     container_name: redis
 
   celeryworker:
@@ -68,8 +47,7 @@ services:
     depends_on:
       - redis
       - postgres
-      - mailhog
-    ports: []
+    ports: [ ]
     command: /start-celeryworker
 
   celerybeat:
@@ -79,14 +57,20 @@ services:
     depends_on:
       - redis
       - postgres
-      - mailhog
-    ports: []
+    ports: [ ]
     command: /start-celerybeat
 
-  flower:
-    <<: *django
-    image: home_automation_local_flower
-    container_name: flower
+
+  homeassistant:
+    image: lscr.io/linuxserver/homeassistant:latest
+    container_name: homeassistant
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Panama
+    volumes:
+      - ./home_assistant/data:/config
     ports:
-      - "5555:5555"
-    command: /start-flower
+      - 8123:8123 #optional
+    restart: unless-stopped
